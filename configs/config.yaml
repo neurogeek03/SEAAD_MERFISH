@@ -2,7 +2,10 @@ optim:
   name: adamw
   lr: 1e-4
   kwargs: {} # TODO add this in default config when created
-  
+
+loss:
+  name: ce-loss
+  kwargs: {}
 
 scheduler:
   name: cosine
@@ -11,9 +14,11 @@ scheduler:
     total_steps: 1000
 
 model: 
-  name: simple
+  name: simple-gcn
   kwargs:
-    x_size: 5
+    num_features: 7 
+    hidden_dim: 64
+    num_classes: 2
 
 callbacks:
   use_early_stopping: true
