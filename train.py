@@ -1,7 +1,9 @@
 import sys
 import torch
-from torch import nn, optim
 from utils.callbacks import EarlyStopping
+from utils import get_optim
+from utils import get_scheduler
+from utils import get_model
 from omegaconf.dictconfig import DictConfig
 from omegaconf.listconfig import ListConfig
 from omegaconf import OmegaConf
@@ -10,7 +12,7 @@ from typing import Callable
 
 def get_config() -> ListConfig | DictConfig:
     
-    default_config_path = "config/config.yaml"
+    default_config_path = "configs/config.yaml"
 
     cfg = OmegaConf.load(default_config_path)
 
@@ -24,22 +26,37 @@ if __name__ == '__main__':
     
     cfg = get_config()
     
-    model: nn.Module = None# TODO write get model
-    optimizer: optim.Optimizer = None # TODO write get optim
-    scheduler: optim.lr_scheduler.LRScheduler = None # TODO write get scheduler
+    model = get_model(
+        cfg.model.name, 
+        **cfg.model.kwargs 
+    )
+    optimizer = get_optim(
+        cfg.optim.name, 
+        model.parameters(), 
+        lr=cfg.optim.lr,
+        **cfg.optim.kwargs
+    )
+    scheduler = get_scheduler(
+        cfg.scheduler.name, 
+        optimizer, 
+        **cfg.scheduler.kwargs
+    )
+    
+    if cfg.callbacks.use_early_stopping:
+        stopper = EarlyStopping(cfg.callbacks.early_stopping_epochs, use=True)
+    else: 
+        stopper = EarlyStopping(use=False)
+    
+    
+    
+    
     train_loader: torch.utils.data.DataLoader = None# TODO
     val_loader: torch.utils.data.DataLoader = None # TODO
     loss_fn: Callable = None # TODO
     
-    
-    if cfg.use_early_stopping:
-        stopper = EarlyStopping(cfg.early_stopping_epochs, use=True)
-    else: 
-        stopper = EarlyStopping(use=False)
-    
     train_losses = []
     val_losses = []
-    for final_model_epochs in tqdm(range(cfg.num_epochs)):
+    for final_model_epochs in tqdm(range(cfg.num_epochs)): #TODO add tqdm for steps and also log loss to progress bar
         loss_iters = 0
         model.train()
         for x, y in train_loader:
