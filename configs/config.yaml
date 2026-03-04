@@ -1,0 +1,5 @@
+batch_size: 64
+lr: 1e-4
+num_epochs: 100
+use_early_stopping: true
+early_stopping_epochs: 5
