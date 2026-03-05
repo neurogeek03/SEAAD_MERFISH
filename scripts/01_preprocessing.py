@@ -5,8 +5,8 @@ import scipy.sparse
 from pathlib import Path
 
 PATH = "/scratch/mfafouti/SEA-AD/SEAAD_MTG_MERFISH.2024-12-11.h5ad"
-OUT_DIR = Path("expression_by_celltype_donor")
-OUT_DIR_NORM = Path("xy_expression_by_celltype_donor_lognorm_zscore")
+OUT_DIR = Path("data/expression_by_celltype_donor")
+OUT_DIR_NORM = Path("data/xy_expression_by_celltype_donor_lognorm_zscore")
 
 DONOR_COL = "Donor ID"
 SUBCLASS_COL = "Subclass"
