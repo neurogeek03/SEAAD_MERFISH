@@ -14,6 +14,16 @@ SECTION_COL = "Section"
 DEPTH_COL = "Depth from pia"
 braak_col = "Braak"
 
+BRAAK_MAP = {
+    "Braak 0":   0,
+    "Braak I":   1,
+    "Braak II":  2,
+    "Braak III": 3,
+    "Braak IV":  4,
+    "Braak V":   5,
+    "Braak VI":  6,
+}
+
 print(f"Loading {PATH} ...")
 adata = ad.read_h5ad(PATH)
 print(f"AnnData shape: {adata.shape}  ({adata.n_obs} cells, {adata.n_vars} genes)\n")
@@ -93,7 +103,10 @@ for subclass in all_subclasses:
     sections_in_subclass = sorted(adata.obs.loc[subclass_mask, SECTION_COL].unique())
     for section in sections_in_subclass:
         section_mask = subclass_mask & (adata.obs[SECTION_COL] == section).values
-        braak_val = adata.obs.loc[section_mask, braak_col].iloc[0]
+        braak_raw = adata.obs.loc[section_mask, braak_col].iloc[0].strip()
+        if braak_raw not in BRAAK_MAP:
+            raise ValueError(f"Unexpected Braak value: {braak_raw!r}. Update BRAAK_MAP to include it.")
+        braak_val = BRAAK_MAP[braak_raw]
         donor_val = adata.obs.loc[section_mask, DONOR_COL].iloc[0]
 
         df = pd.DataFrame(X_zscore[section_mask], columns=gene_cols)
