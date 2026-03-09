@@ -11,7 +11,7 @@ dependencies = [
     "omegaconf>=2.3.0",
     "pandas>=2.3.3",
     "scanpy>=1.12",
-    "torch>=2.10.0",
+    "torch==2.8.0",
     "torch-geometric>=2.7.0",
     "torchinfo>=1.8.0",
     "tqdm>=4.67.3",
