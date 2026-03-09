@@ -11,12 +11,12 @@ Processed data is not stored in git. It is tracked with [DVC](https://dvc.org) a
    uv sync
    ```
 
-2. Make sure you have access to the DVC remote (ask a collaborator for credentials/access if needed).
+2. Extract data
 
-## Pulling the data
+## Extracting the Data
 
 ```bash
-uv run dvc pull
+tar -xJvf data/braak_xy_expression_by_celltype_donor_lognorm_zscore.tar.xz
 ```
 
 This will download the processed data into `data/` on your machine, matching the exact version tied to your current git commit.
