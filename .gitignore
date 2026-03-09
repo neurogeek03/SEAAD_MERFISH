@@ -211,4 +211,5 @@ CLAUDE.md
 
 # Data — large files, not tracked by git (use DVC)
 /data/*
+!/data/*.tar.xz
 !/data/*.dvc
