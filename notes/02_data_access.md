@@ -19,7 +19,7 @@ Processed data is not stored in git. It is tracked with [DVC](https://dvc.org) a
 tar -xJvf data/braak_xy_expression_by_celltype_donor_lognorm_zscore.tar.xz
 ```
 
-This will download the processed data into `data/` on your machine, matching the exact version tied to your current git commit.
+This will extract the data into the `data/` directory.
 
 ## Data contents
 
