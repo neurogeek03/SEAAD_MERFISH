@@ -4,6 +4,7 @@ import pandas as pd
 from torch_geometric.data import Dataset, Data
 from torch_geometric.nn import knn_graph
 from torch_geometric.transforms import Distance
+import torch.nn.functional as F
 
 # params
 META_COLS = {'Subclass', 'Section', 'Donor_ID', 'BRAAK_score', 'x', 'y'}
@@ -31,11 +32,13 @@ class MERFISHDataset(Dataset):
             # + converting to tensors
             x = torch.tensor(df[gene_cols].values, dtype=torch.float)
             pos = torch.tensor(df[['x', 'y']].values, dtype=torch.float)
-            y = torch.tensor([int(df['BRAAK_score'].iloc[0])], dtype=torch.long)
-
+            y = F.one_hot(
+                torch.tensor(int(df['BRAAK_score'].iloc[0]), dtype=torch.long),
+                num_classes=6,
+            )
             edge_index = knn_graph(pos, k=self.k, loop=False)
 
-            data = Data(x=x, edge_index=edge_index, y=y, pos=pos)
+            data = Data(x=x, edge_index=edge_index, y=y.unsqueeze(0).to(torch.float), pos=pos)
             data = Distance()(data)
             if device is not None:
                 self.data_pts.append(data.to(device))
