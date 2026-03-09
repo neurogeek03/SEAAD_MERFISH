@@ -3,6 +3,7 @@ import torch
 import pandas as pd
 from torch_geometric.data import Dataset, Data
 from torch_geometric.nn import knn_graph
+from torch_geometric.transforms import Distance
 
 # params
 META_COLS = {'Subclass', 'Section', 'Donor_ID', 'BRAAK_score', 'x', 'y'}
@@ -10,36 +11,14 @@ META_COLS = {'Subclass', 'Section', 'Donor_ID', 'BRAAK_score', 'x', 'y'}
 
 class MERFISHDataset(Dataset):
 
-    def __init__(self, root: str, file_list: list[str], k: int = 10,
-                 transform=None, pre_transform=None):
+    def __init__(self, root: str, file_list: list[str], device: str=None, k: int = 10, 
+                 transform=None, pre_transform=None, ):
         self.file_list = file_list
         self.k = k
         # super().__init__ must come AFTER setting instance attributes,
         # because it calls process() which uses self.file_list and self.k
         super().__init__(root, transform, pre_transform)
-
-    # --- PyG Dataset interface ---
-
-    @property
-    def raw_file_names(self) -> list[str]:
-        # No downloading needed 
-        return []
-
-    @property
-    def processed_file_names(self) -> list[str]:
-        # One .pt file per CSV: {subclass}_{section}.pt
-        names = []
-        for fpath in self.file_list:
-            parts = fpath.replace('\\', '/').split('/')
-            subclass = parts[-2].replace(' ', '_')
-            section = os.path.splitext(parts[-1])[0]
-            names.append(f"{subclass}_{section}.pt")
-        return names
-
-    def download(self):
-        pass  # data already exists on disk
-
-    def process(self):
+        self.data_pts = []
         for i, fpath in enumerate(self.file_list):
             df = pd.read_csv(fpath)
 
@@ -57,9 +36,23 @@ class MERFISHDataset(Dataset):
             edge_index = knn_graph(pos, k=self.k, loop=False)
 
             data = Data(x=x, edge_index=edge_index, y=y, pos=pos)
+            data = Distance()(data)
+            if device is not None:
+                self.data_pts.append(data.to(device))
+            else:
+                self.data_pts.append(data.to('cuda' if torch.cuda.is_available() else 'cpu'))
 
-            out_path = os.path.join(self.processed_dir, self.processed_file_names[i])
-            torch.save(data, out_path)
+    @property
+    def processed_file_names(self) -> list[str]:
+        # One .pt file per CSV: {subclass}_{section}.pt
+        names = []
+        for fpath in self.file_list:
+            parts = fpath.replace('\\', '/').split('/')
+            subclass = parts[-2].replace(' ', '_')
+            section = os.path.splitext(parts[-1])[0]
+            names.append(f"{subclass}_{section}.pt")
+        return names
+
 
     # --- Standard access ---
 
@@ -67,8 +60,7 @@ class MERFISHDataset(Dataset):
         return len(self.file_list)
 
     def get(self, idx: int) -> Data:
-        path = os.path.join(self.processed_dir, self.processed_file_names[idx])
-        return torch.load(path, weights_only=False)
+        return self.data_pts[idx]
 
     # --- Split helpers ---
 
