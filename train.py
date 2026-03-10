@@ -8,7 +8,7 @@ from omegaconf.listconfig import ListConfig
 from omegaconf import OmegaConf
 from tqdm import tqdm
 from pathlib import Path
-
+import matplotlib.pyplot as plt
 from torch_geometric.loader import DataLoader
 
 
@@ -45,15 +45,26 @@ class Train():
         
         self.scheduler = None
         if cfg.scheduler is not None:
+            self.lr_history = []
             self.scheduler = get_scheduler(
                 cfg.scheduler.name, 
                 self.optimizer, 
                 **cfg.scheduler.kwargs
             )
         
+        self.stopper = None
+        if cfg.callbacks.use_early_stopping:
+            self.stopper = EarlyStopping(cfg.callbacks.patience)
+        
         self.cfg = cfg
         self.loss_epoch = []
         self.val_loss = []
+        self.step_loss = []
+        self.run_name = cfg.run_name
+        self.work_dir = Path(cfg.work_dir).joinpath(self.run_name)
+        self.work_dir.mkdir(parents=True, exist_ok=True)
+        self.step = 0
+        
         if cfg.device is not None:
             self.model.to(cfg.device)
         else:
@@ -66,6 +77,7 @@ class Train():
         
         if self.scheduler is not None:
             self.scheduler.step()
+            self.lr_history.append(self.scheduler.get_last_lr())
 
     
     def train(self, train_loader: DataLoader):
@@ -75,6 +87,8 @@ class Train():
             y_hat = self.model(x.x, x.edge_index, x.batch)
             loss = self.loss_fn(y_hat, x.y)
             loss_iters += loss.item()
+            self.step_loss.append(loss.item())
+            self.step += 1
             self.after_train_batch(loss)
         self.loss_epoch.append(loss_iters / len(train_loader))
         
@@ -87,10 +101,40 @@ class Train():
             loss = self.loss_fn(y_hat, x.y)
             loss_iters += loss.item()
         self.val_loss.append(loss_iters / len(val_loader))
+        if self.stopper is not None:
+            self.stopper(self.last_val_loss)
         
     @property
     def last_val_loss(self):
         return self.val_loss[-1] if self.val_loss else 0
+    
+    def training_summary(self, final_epochs: int):
+        
+        fig_dir = self.work_dir.joinpath('figures')
+        fig_dir.mkdir(parents=True, exist_ok=True)
+        
+        
+        
+        plt.figure()
+        plt.plot(range(final_epochs+1), self.loss_epoch, 'r')
+        plt.plot(range(final_epochs+1), self.val_loss)
+        plt.xlabel('Epoch')
+        plt.ylabel(f'{self.cfg.loss.name}')
+        plt.legend(['Train Loss', 'Validation Loss'])
+        plt.savefig(fig_dir.joinpath('loss_curves.png'))
+        
+        plt.figure()
+        plt.plot(range(self.step), self.lr_history)
+        plt.xlabel('Step')
+        plt.ylabel('Learning Rate')
+        plt.savefig(fig_dir.joinpath('lr.png'))
+        
+        plt.figure()
+        plt.plot(range(self.step), self.step_loss)
+        plt.xlabel('Step')
+        plt.ylabel(f'{cfg.loss.name}')
+        plt.savefig(fig_dir.joinpath('step_loss.png'))
+        
 
 
 
@@ -101,11 +145,6 @@ if __name__ == '__main__':
     cfg = get_config()
     trainer = Train(cfg)
 
-    if cfg.callbacks.use_early_stopping:
-        stopper = EarlyStopping(cfg.callbacks.early_stopping_epochs, use=True)
-    else: 
-        stopper = EarlyStopping(use=False)
-    
     train, val, test = random_donor_split(
         file_list=[str(x) for x in Path('data/braak_xy_expression_by_celltype_donor_lognorm_zscore/Astrocyte').glob('*.csv')],
         val_frac=0.1,
@@ -124,5 +163,4 @@ if __name__ == '__main__':
             pbar.set_postfix({"train_loss": f"{trainer.loss_epoch[-1]:.4f}", "val_loss": f"{trainer.last_val_loss:.4f}"}, refresh=False)
             with torch.no_grad():
                 trainer.val(val_loader)        
-            stopper.check_if_stop(trainer.last_val_loss)
-    
+    trainer.training_summary(final_model_epochs)
