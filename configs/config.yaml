@@ -7,20 +7,22 @@ scheduler:
   name: cosine
   kwargs:
     max_lr: ${optim.lr}
-    total_steps: 800
+    total_steps: 1600
 model: 
   name: simple-gcn
+  print_summary: true
+  num_models_to_save: 5
   kwargs:
     num_features: 140 
-    hidden_dim: 128
+    hidden_dim: 86
     num_classes: 6
 callbacks:
-  use_early_stopping: true
-  patience: 5
+  use_early_stopping: false
+  patience: 15
 data:
   root: data/braak_xy_expression_by_celltype_donor_lognorm_zscore
-  k: 30
-num_epochs: 256
+  k: 10
+num_epochs: 512
 batch_size: 16
 device: 'cuda:0'
 run_name: run_1

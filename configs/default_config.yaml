@@ -11,6 +11,8 @@ scheduler: null
 
 model: 
   name: simple-gcn
+  print_summary: true
+  num_models_to_save: 5
   kwargs:
     num_features: 140 
     hidden_dim: 64
