@@ -213,3 +213,4 @@ CLAUDE.md
 /data/*
 !/data/*.tar.xz
 !/data/*.dvc
+work_dir/*
