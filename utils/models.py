@@ -7,7 +7,8 @@ class SimpleGCN(nn.Module):
         self, 
         num_features: int, 
         hidden_dim: int, 
-        num_classes: int
+        num_classes: int,
+        dropout_prob=0.2
     ):
         super().__init__()
         self.conv_in = gnn.GCNConv(num_features, hidden_dim)
@@ -16,8 +17,10 @@ class SimpleGCN(nn.Module):
         self.mlp = nn.Sequential(
             nn.Linear(hidden_dim, int(hidden_dim * ratio)),
             nn.ReLU(),
+            nn.Dropout(p=dropout_prob),
             nn.Linear(int(hidden_dim * ratio), int(hidden_dim * ratio ** 2)),
             nn.ReLU(),
+            nn.Dropout(p=dropout_prob),
             nn.Linear(int(hidden_dim * ratio ** 2), num_classes),
             nn.ReLU()
         )
