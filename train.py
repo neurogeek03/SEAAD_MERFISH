@@ -10,6 +10,7 @@ from tqdm import tqdm
 from pathlib import Path
 import matplotlib.pyplot as plt
 from torch_geometric.loader import DataLoader
+from torchinfo import summary
 
 
 def get_config() -> ListConfig | DictConfig:
@@ -43,6 +44,9 @@ class Train():
             **cfg.loss.kwargs
         )
         
+        if cfg.model.print_summary:
+            summary(self.model)
+        
         self.scheduler = None
         if cfg.scheduler is not None:
             self.lr_history = []
@@ -64,6 +68,9 @@ class Train():
         self.work_dir = Path(cfg.work_dir).joinpath(self.run_name)
         self.work_dir.mkdir(parents=True, exist_ok=True)
         self.step = 0
+        self.best_val_loss = 100
+        self.top_saved_models = []
+        self.num_models_save = cfg.model.num_models_to_save
         
         if cfg.device is not None:
             self.model.to(cfg.device)
@@ -101,13 +108,41 @@ class Train():
             loss = self.loss_fn(y_hat, x.y)
             loss_iters += loss.item()
         self.val_loss.append(loss_iters / len(val_loader))
+        
+        if self.last_val_loss < self.best_val_loss:
+            self.best_val_loss = self.last_val_loss
+            self.save_model()
+            
         if self.stopper is not None:
-            self.stopper(self.last_val_loss)
+            return self.stopper(self.last_val_loss)
+        return False
         
     @property
     def last_val_loss(self):
         return self.val_loss[-1] if self.val_loss else 0
     
+    
+    def save_model(self):
+        out_dir = self.work_dir.joinpath('models')
+        out_dir.mkdir(parents=True, exist_ok=True)
+        params = {
+            'model_state': self.model.state_dict(),
+            'optim_state': self.optimizer.state_dict(),
+            'val_loss': self.last_val_loss,
+        }
+        if self.scheduler is not None:
+            params['scheduler_state'] = self.scheduler.state_dict()
+        model_name = out_dir.joinpath(f'{self.run_name}_best_val_loss_{self.last_val_loss:.4f}.pt')
+        torch.save(params, model_name)
+        
+        self.top_saved_models.append([self.best_val_loss, model_name])
+        self.top_saved_models.sort(key=lambda x: x[0])
+        if len(self.top_saved_models) > self.num_models_save:
+            _, worst_path = self.top_saved_models.pop()
+            if worst_path.is_file():
+                worst_path.unlink()
+            
+
     def training_summary(self, final_epochs: int):
         
         fig_dir = self.work_dir.joinpath('figures')
@@ -162,5 +197,8 @@ if __name__ == '__main__':
             trainer.train(train_loader)
             pbar.set_postfix({"train_loss": f"{trainer.loss_epoch[-1]:.4f}", "val_loss": f"{trainer.last_val_loss:.4f}"}, refresh=False)
             with torch.no_grad():
-                trainer.val(val_loader)        
+                should_stop = trainer.val(val_loader)
+            if should_stop:
+                print(f'Stopped after {final_model_epochs} epochs due to early stopping.')
+                break        
     trainer.training_summary(final_model_epochs)
