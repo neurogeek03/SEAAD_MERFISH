@@ -1,7 +1,3 @@
-# Data Access via DVC
-
-Processed data is not stored in git. It is tracked with [DVC](https://dvc.org) and stored on a remote. Follow the steps below to obtain it.
-
 ## Prerequisites
 
 1. Clone the repo and set up the Python environment:
