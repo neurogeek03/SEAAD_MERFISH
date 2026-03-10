@@ -18,7 +18,7 @@ model:
 
 callbacks:
   use_early_stopping: true
-  early_stopping_epochs: 5
+  patience: 5
 
 data:
   root: null
@@ -26,3 +26,5 @@ data:
 num_epochs: 100
 batch_size: 4
 device: null
+run_name: run_1
+work_dir: work_dir
