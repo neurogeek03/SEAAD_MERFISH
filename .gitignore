@@ -209,8 +209,7 @@ __marimo__/
 # Claude Code
 CLAUDE.md
 
-# Data — large files, not tracked by git (use DVC)
+# Data — large files, not tracked by git 
 /data/*
 !/data/*.tar.xz
-!/data/*.dvc
 work_dir/*

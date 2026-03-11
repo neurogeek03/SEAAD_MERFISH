@@ -34,7 +34,7 @@ class MERFISHDataset(Dataset):
             pos = torch.tensor(df[['x', 'y']].values, dtype=torch.float)
             y = F.one_hot(
                 torch.tensor(int(df['BRAAK_score'].iloc[0]), dtype=torch.long),
-                num_classes=6,
+                num_classes=7,
             )
             edge_index = knn_graph(pos, k=self.k, loop=False)
 
