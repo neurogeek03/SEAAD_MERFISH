@@ -167,7 +167,7 @@ class Train():
         plt.figure()
         plt.plot(range(self.step), self.step_loss)
         plt.xlabel('Step')
-        plt.ylabel(f'{cfg.loss.name}')
+        plt.ylabel(f'{self.cfg.loss.name}')
         plt.savefig(fig_dir.joinpath('step_loss.png'))
         
 
