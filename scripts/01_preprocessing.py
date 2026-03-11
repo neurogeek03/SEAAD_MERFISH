@@ -6,7 +6,7 @@ from pathlib import Path
 
 PATH = "/scratch/mfafouti/SEA-AD/SEAAD_MTG_MERFISH.2024-12-11.h5ad"
 OUT_DIR = Path("data/expression_by_celltype_donor")
-OUT_DIR_NORM = Path("data/xy_expression_by_celltype_donor_lognorm_zscore")
+OUT_DIR_NORM = Path("data/braak_xy_expression_by_celltype_donor_lognorm")
 
 DONOR_COL = "Donor ID"
 SUBCLASS_COL = "Subclass"
@@ -67,31 +67,16 @@ else:
         print(f"  {section}: missing {absent}")
     print()
 
-# --- Normalization: global log1p → per-cell-type z-score per gene ---
+# --- Normalization: global log1p only (z-scoring is done per split in dataset.py) ---
 print("Applying global log1p ...")
 X = adata.X
 if scipy.sparse.issparse(X):
     X = X.toarray()
 X = np.log1p(X.astype(np.float32))
-print(f"  log1p done. min={X.min():.3f}, max={X.max():.3f}")
+print(f"  log1p done. min={X.min():.3f}, max={X.max():.3f}\n")
 
-print("\nApplying per-subclass z-score per gene ...")
-X_zscore = np.zeros_like(X)
-for subclass in all_subclasses:
-    mask = (adata.obs[SUBCLASS_COL] == subclass).values
-    X_sub = X[mask]                         
-    mean = X_sub.mean(axis=0)                
-    std  = X_sub.std(axis=0)
-    std[std == 0] = 1.0                     
-    X_zscore[mask] = (X_sub - mean) / std
-    print(f"  {subclass:<35} n={mask.sum():>7}  gene-std range: [{std.min():.3f}, {std.max():.3f}]")
-
-adata.layers["lognorm"] = X
-adata.layers["lognorm_zscore"] = X_zscore
-print()
-
-# --- Save normalized data: {Subclass}/{Section}.csv ---
-print(f"Saving normalized CSVs to {OUT_DIR_NORM} ...")
+# --- Save lognorm CSVs: {Subclass}/{Section}.csv ---
+print(f"Saving lognorm CSVs to {OUT_DIR_NORM} ...")
 gene_cols = list(adata.var_names)
 
 section_counts = []
@@ -109,7 +94,7 @@ for subclass in all_subclasses:
         braak_val = BRAAK_MAP[braak_raw]
         donor_val = adata.obs.loc[section_mask, DONOR_COL].iloc[0]
 
-        df = pd.DataFrame(X_zscore[section_mask], columns=gene_cols)
+        df = pd.DataFrame(X[section_mask], columns=gene_cols)
         df.insert(0, "BRAAK_score", braak_val)
         df.insert(0, "Donor_ID", donor_val)
         df.insert(0, "Section", section)

@@ -6,7 +6,7 @@ sc_ad = sc.read_h5ad("/scratch/mfafouti/SEA-AD/SEAAD_MTG_MERFISH.2024-12-11.h5ad
 
 # --- Export obs ---
 obs_df = sc_ad.obs.copy()
-obs_df.to_csv("/scratch/mfafouti/SEA-AD/SEAAD_MERFISH/data/SEAAD_obs.csv")
+obs_df.to_csv("/scratch/mfafouti/SEA-AD/out/SEAAD_obs.csv")
 print("obs exported to SEAAD_obs.csv")
 
 # --- Export obsm ---

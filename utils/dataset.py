@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import torch
 import pandas as pd
 from torch_geometric.data import Dataset, Data
@@ -19,31 +20,34 @@ class MERFISHDataset(Dataset):
         # super().__init__ must come AFTER setting instance attributes,
         # because it calls process() which uses self.file_list and self.k
         super().__init__(root, transform, pre_transform)
+
+        # Determine gene columns from the first file (same across all files)
+        df0 = pd.read_csv(self.file_list[0])
+        blank_cols = [c for c in df0.columns if c.startswith('Blank-')]
+        drop_cols  = set(blank_cols) | META_COLS
+        gene_cols  = [c for c in df0.columns if c not in drop_cols]
+
+        # Load all files once, then compute per-gene mean/std for this split
+        dfs   = [df0] + [pd.read_csv(f) for f in self.file_list[1:]]
+        all_X = np.concatenate([df[gene_cols].values for df in dfs], axis=0).astype(np.float32)
+        mean  = all_X.mean(axis=0)
+        std   = all_X.std(axis=0)
+        std[std == 0] = 1.0   # avoid division by zero for constant genes
+
+        # Build one graph per file with z-scored features
+        target_device = device if device is not None else ('cuda' if torch.cuda.is_available() else 'cpu')
         self.data_pts = []
-        for i, fpath in enumerate(self.file_list):
-            df = pd.read_csv(fpath)
-
-            # removing blank probes - used for False-positive detection
-            blank_cols = [c for c in df.columns if c.startswith('Blank-')]
-            drop_cols = set(blank_cols) | META_COLS
-            gene_cols = [c for c in df.columns if c not in drop_cols]
-
-            # separating features from x,y coords and labels (BRAAK)
-            # + converting to tensors
-            x = torch.tensor(df[gene_cols].values, dtype=torch.float)
-            pos = torch.tensor(df[['x', 'y']].values, dtype=torch.float)
-            y = F.one_hot(
+        for df in dfs:
+            x_z = torch.tensor((df[gene_cols].values.astype(np.float32) - mean) / std, dtype=torch.float)
+            pos  = torch.tensor(df[['x', 'y']].values, dtype=torch.float)
+            y    = F.one_hot(
                 torch.tensor(int(df['BRAAK_score'].iloc[0]), dtype=torch.long),
                 num_classes=7,
             )
             edge_index = knn_graph(pos, k=self.k, loop=False)
-
-            data = Data(x=x, edge_index=edge_index, y=y.unsqueeze(0).to(torch.float), pos=pos)
+            data = Data(x=x_z, edge_index=edge_index, y=y.unsqueeze(0).to(torch.float), pos=pos)
             data = Distance()(data)
-            if device is not None:
-                self.data_pts.append(data.to(device))
-            else:
-                self.data_pts.append(data.to('cuda' if torch.cuda.is_available() else 'cpu'))
+            self.data_pts.append(data.to(target_device))
 
     @property
     def processed_file_names(self) -> list[str]:
