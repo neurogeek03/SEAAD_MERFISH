@@ -1,0 +1,9 @@
+# Experiment 001 — reduce overfitting
+# Changes vs config.yaml: smaller model, higher dropout, early stopping on
+model:
+  kwargs:
+    hidden_dim: 32
+    dropout_prob: 0.5
+callbacks:
+  use_early_stopping: true
+  patience: 15

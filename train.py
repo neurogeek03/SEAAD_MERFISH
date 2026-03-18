@@ -1,4 +1,5 @@
 import sys
+import re
 import torch
 from utils.callbacks import EarlyStopping
 from utils import get_optim, get_scheduler, get_model, get_loss_fn, MERFISHDataset
@@ -12,15 +13,34 @@ from torch_geometric.loader import DataLoader
 from torchinfo import summary
 
 
+def get_next_run_name(work_dir: str) -> str:
+    work = Path(work_dir)
+    if not work.exists():
+        return "run_1"
+    existing = [d.name for d in work.iterdir() if d.is_dir() and re.match(r"run_\d+", d.name)]
+    if not existing:
+        return "run_1"
+    nums = [int(re.search(r"\d+", name).group()) for name in existing]
+    return f"run_{max(nums) + 1}"
+
+
 def get_config() -> ListConfig | DictConfig:
-    
+    """
+    Merge chain: default_config.yaml → base config (argv[1]) → experiment config (argv[2])
+    Each layer overrides only the keys it specifies.
+    Usage:
+        python train.py                                         # defaults only
+        python train.py configs/config.yaml                    # base override
+        python train.py configs/config.yaml configs/exp.yaml   # base + experiment
+    """
     default_config_path = "configs/default_config.yaml"
 
     cfg = OmegaConf.load(default_config_path)
 
-    if len(sys.argv) > 1:
-        user_cfg = OmegaConf.load(sys.argv[1])
-        cfg = OmegaConf.merge(cfg, user_cfg)
+    for arg in sys.argv[1:]:
+        cfg = OmegaConf.merge(cfg, OmegaConf.load(arg))
+
+    OmegaConf.update(cfg, "run_name", get_next_run_name(cfg.work_dir))
 
     return cfg
 
@@ -169,10 +189,6 @@ class Train():
         plt.ylabel(f'{self.cfg.loss.name}')
         plt.savefig(fig_dir.joinpath('step_loss.png'))
         
-
-
-
-
 
 if __name__ == '__main__':
     
