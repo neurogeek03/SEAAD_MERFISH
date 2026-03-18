@@ -7,7 +7,7 @@ scheduler:
   name: cosine
   kwargs:
     max_lr: ${optim.lr}
-    total_steps: 1600
+    total_steps: 27136
 model: 
   name: simple-gcn
   print_summary: true
@@ -20,7 +20,7 @@ callbacks:
   use_early_stopping: false
   patience: 15
 data:
-  root: data/braak_xy_expression_by_celltype_donor_lognorm_zscore
+  root: data/braak_xy_expression_by_celltype_donor_lognorm
   samplesheet: data/samplesheet.csv
   k: 10
 num_epochs: 512

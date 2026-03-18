@@ -209,6 +209,9 @@ __marimo__/
 # Claude Code
 CLAUDE.md
 
+# Local docs / explainers
+docs/
+
 # Data — large files, not tracked by git 
 /data/*
 !/data/*.tar.xz
