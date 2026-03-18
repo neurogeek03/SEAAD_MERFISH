@@ -1,6 +1,5 @@
 import sys
 import torch
-from utils.data_split import random_donor_split
 from utils.callbacks import EarlyStopping
 from utils import get_optim, get_scheduler, get_model, get_loss_fn, MERFISHDataset
 from omegaconf.dictconfig import DictConfig
@@ -180,15 +179,14 @@ if __name__ == '__main__':
     cfg = get_config()
     trainer = Train(cfg)
 
-    train, val, test = random_donor_split(
-        file_list=[str(x) for x in Path('data/braak_xy_expression_by_celltype_donor_lognorm_zscore/Astrocyte').glob('*.csv')],
-        val_frac=0.1,
-        test_frac=0.2
-    )
-    
-    train_loader = DataLoader(MERFISHDataset(cfg.data.root, train, k=cfg.data.k, device=cfg.device),
+    all_files = MERFISHDataset.collect_files(cfg.data.root)
+    train_files, val_files, test_files = MERFISHDataset.donor_split(all_files, cfg.data.samplesheet)
+
+    train_loader = DataLoader(MERFISHDataset(cfg.data.root, train_files, k=cfg.data.k, device=cfg.device),
                             batch_size=cfg.batch_size, shuffle=True)
-    val_loader   = DataLoader(MERFISHDataset(cfg.data.root, val, k=cfg.data.k, device=cfg.device),
+    val_loader   = DataLoader(MERFISHDataset(cfg.data.root, val_files, k=cfg.data.k, device=cfg.device),
+                            batch_size=cfg.batch_size, shuffle=False)
+    test_loader  = DataLoader(MERFISHDataset(cfg.data.root, test_files, k=cfg.data.k, device=cfg.device),
                             batch_size=cfg.batch_size, shuffle=False)
 
     

@@ -24,6 +24,7 @@ callbacks:
 
 data:
   root: null
+  samplesheet: null
   k: 10
 num_epochs: 100
 batch_size: 4

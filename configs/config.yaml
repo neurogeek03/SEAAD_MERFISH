@@ -21,6 +21,7 @@ callbacks:
   patience: 15
 data:
   root: data/braak_xy_expression_by_celltype_donor_lognorm_zscore
+  samplesheet: data/samplesheet.csv
   k: 10
 num_epochs: 512
 batch_size: 16
