@@ -15,7 +15,7 @@ model:
   kwargs:
     num_features: 140 
     hidden_dim: 86
-    num_classes: 7
+    num_classes: 3
 callbacks:
   use_early_stopping: false
   patience: 15

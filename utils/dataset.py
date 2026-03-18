@@ -10,6 +10,9 @@ import torch.nn.functional as F
 # params
 META_COLS = {'Subclass', 'Section', 'Donor_ID', 'BRAAK_score', 'x', 'y'}
 
+# Scheme B: map raw BRAAK score (int) → 3-class group index
+BRAAK_TO_GROUP = {2: 0, 3: 0, 4: 1, 5: 2, 6: 2}
+
 
 class MERFISHDataset(Dataset):
 
@@ -40,9 +43,10 @@ class MERFISHDataset(Dataset):
         for df in dfs:
             x_z = torch.tensor((df[gene_cols].values.astype(np.float32) - mean) / std, dtype=torch.float)
             pos  = torch.tensor(df[['x', 'y']].values, dtype=torch.float)
+            braak_raw = int(df['BRAAK_score'].iloc[0])
             y    = F.one_hot(
-                torch.tensor(int(df['BRAAK_score'].iloc[0]), dtype=torch.long),
-                num_classes=7,
+                torch.tensor(BRAAK_TO_GROUP[braak_raw], dtype=torch.long),
+                num_classes=3,
             )
             edge_index = knn_graph(pos, k=self.k, loop=False)
             data = Data(x=x_z, edge_index=edge_index, y=y.unsqueeze(0).to(torch.float), pos=pos)
