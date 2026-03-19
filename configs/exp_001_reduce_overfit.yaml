@@ -1,9 +1,13 @@
 # Experiment 001 — reduce overfitting
-# Changes vs config.yaml: smaller model, higher dropout, early stopping on
+# Changes vs config.yaml: smaller model, higher dropout, early stopping, no scheduler, weighted loss
+scheduler: null
 model:
   kwargs:
-    hidden_dim: 32
+    hidden_dim: 64
     dropout_prob: 0.5
+loss:
+  kwargs:
+    weight: [1.85, 0.49, 0.66]  # inverse-frequency weights normalized to mean=1: class 0 (2-3), 1 (4), 2 (5-6)
 callbacks:
   use_early_stopping: true
-  patience: 15
+  patience: 30
