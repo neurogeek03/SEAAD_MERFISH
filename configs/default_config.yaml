@@ -31,3 +31,4 @@ batch_size: 4
 device: null
 run_name: run_1
 work_dir: work_dir
+batch_pbar: false
