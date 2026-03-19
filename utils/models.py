@@ -12,7 +12,9 @@ class SimpleGCN(nn.Module):
     ):
         super().__init__()
         self.conv_in = gnn.GCNConv(num_features, hidden_dim)
-        self.conv_mid = gnn.GCNConv(hidden_dim, hidden_dim)
+        self.conv_mid1 = gnn.GCNConv(hidden_dim, hidden_dim)
+        self.conv_mid2 = gnn.GCNConv(hidden_dim, hidden_dim)
+        self.conv_mid3 = gnn.GCNConv(hidden_dim, hidden_dim)
         ratio = (num_classes / hidden_dim) ** (1 / 3)
         self.mlp = nn.Sequential(
             nn.Linear(hidden_dim, int(hidden_dim * ratio)),
@@ -28,11 +30,11 @@ class SimpleGCN(nn.Module):
     def forward(self, x, edge_index, batch):
         x = self.conv_in(x, edge_index)
         x = x.relu()
-        x = self.conv_mid(x, edge_index)
+        x = self.conv_mid1(x, edge_index)
         x = x.relu()
-        x = self.conv_mid(x, edge_index)
+        x = self.conv_mid2(x, edge_index)
         x = x.relu()
-        x = self.conv_mid(x, edge_index)
+        x = self.conv_mid3(x, edge_index)
         x = x.relu()
         x = gnn.global_mean_pool(x, batch)
         x = self.mlp(x)
