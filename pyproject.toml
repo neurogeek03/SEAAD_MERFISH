@@ -5,9 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "debugpy>=1.8.20",
     "dvc>=3.66.1",
     "dvc-gdrive>=3.0.1",
+    "graphkit-learn>=0.2.1.post20240206154638",
     "matplotlib>=3.10.8",
+    "networkx>=3.6.1",
     "omegaconf>=2.3.0",
     "pandas>=2.3.3",
     "scanpy>=1.12",
