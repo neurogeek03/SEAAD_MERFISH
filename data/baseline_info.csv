@@ -1,0 +1,28 @@
+Donor ID,Age at Death,Sex,Overall CAA Score,Braak,Continuous Pseudo-progression Score,Last CASI Score,CERAD score,Atherosclerosis,Years of education
+H20.33.001,82,Male,Not identified,Braak IV,0.5228888279361776,97.0,Sparse,Mild,16.0
+H21.33.006,90,Male,Mild,Braak IV,0.8380957485349958,88.0,Sparse,,16.0
+H21.33.025,88,Female,Moderate,Braak IV,0.5180047373532973,94.0,Moderate,Mild,21.0
+H20.33.015,88,Male,Not identified,Braak V,0.8789675660744676,88.0,Moderate,Moderate,18.0
+H20.33.012,90,Female,Not identified,Braak III,0.2370099969076043,98.0,Absent,Mild,18.0
+H21.33.001,80,Male,Not identified,Braak III,0.1496163306752355,89.0,Absent,Moderate,21.0
+H20.33.035,90,Female,Not identified,Braak IV,0.2044854887920877,92.0,Absent,Moderate,16.0
+H21.33.019,75,Male,Not identified,Braak 0,0.5174762862488702,97.0,Sparse,Moderate,15.0
+H21.33.022,82,Female,Mild,Braak VI,0.73992399006534,97.0,Moderate,,12.0
+H21.33.021,90,Female,Not identified,Braak III,0.7049965047230643,86.0,Moderate,Moderate,14.0
+H21.33.040,83,Male,Moderate,Braak V,0.7445178897441249,91.0,Frequent,Mild,17.0
+H21.33.011,83,Female,Not identified,Braak IV,0.1706185204590391,91.0,Absent,,17.0
+H21.33.038,84,Female,Not identified,Braak III,0.1823698144261527,97.0,Absent,Mild,15.0
+H20.33.044,81,Male,Not identified,Braak V,0.3556318839242121,88.0,Absent,Mild,19.0
+H21.33.014,90,Male,Not identified,Braak IV,0.7541851931476975,,Sparse,Moderate,15.0
+H20.33.040,90,Male,Not identified,Braak IV,0.4388269342986955,93.0,Frequent,Moderate,13.0
+H21.33.013,90,Female,Not identified,Braak V,0.8895627531686694,80.0,Moderate,Severe,21.0
+H20.33.025,90,Male,Not identified,Braak V,0.5888818718108809,94.0,Moderate,,12.0
+H21.33.031,84,Male,Moderate,Braak V,0.8346266923124073,,Moderate,Moderate,18.0
+H21.33.032,90,Female,Moderate,Braak IV,0.3804112153095788,,Sparse,Mild,16.0
+H21.33.016,90,Female,Not identified,Braak IV,0.3361732968772883,80.0,Absent,Mild,21.0
+H21.33.023,90,Male,Not identified,Braak IV,0.2965550346864681,86.0,Absent,Moderate,12.0
+H21.33.012,90,Female,Mild,Braak IV,0.4862965626092973,98.0,Sparse,Mild,21.0
+H20.33.004,86,Male,Moderate,Braak V,0.7250056992852697,80.0,Frequent,Mild,15.0
+H21.33.005,90,Male,Not identified,Braak V,0.5757346347799297,98.0,Moderate,Moderate,16.0
+H21.33.015,90,Male,Mild,Braak IV,0.2307807621643048,84.0,Sparse,Mild,12.0
+H21.33.028,72,Male,Moderate,Braak II,0.300177146234878,99.0,Absent,Moderate,16.0
