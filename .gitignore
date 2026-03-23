@@ -213,6 +213,7 @@ CLAUDE.md
 docs/
 
 # Data — large files, not tracked by git 
-/data/*
+/data/*/
 !/data/*.tar.xz
 work_dir/*
+*.h5ad
