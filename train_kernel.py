@@ -114,33 +114,36 @@ if __name__ == '__main__':
             learning_rate=grid['lr'],      
             scheduler=ReduceOnWorsening()
         )
-    
-        scores = cross_val_score(
-            [mat, rbf], 
-            braaks, 
-            mkl, 
-            LeaveOneOut(), 
-            random_state=42, 
-            scoring='accuracy'
-        )
-        df.at[i, 'mat_rbf_acc'] = np.mean(scores)
-        print(f'mat and rbf: {np.mean(scores):.4f}')
-    
-        scores = []
-        for train, test in LeaveOneOut().split(braaks):
-            svc = SVC(kernel='precomputed')
-            svc.fit(rbf[train][:, train], braaks[train])   
-            scores.append(svc.score(rbf[test][:, train], braaks[test]))
-        df.at[i, 'rbf_acc'] = np.mean(scores)
-        print(f'rbf {np.mean(scores)}')
-    
-        scores = []
-        for train, test in LeaveOneOut().split(braaks):
-            svc = SVC(kernel='precomputed')
-            svc.fit(mat[train][:, train], braaks[train])   
-            scores.append(svc.score(mat[test][:, train], braaks[test]))
-        df.at[i, 'mat_acc'] = np.mean(scores)
-        print(f'mat only {np.mean(scores)}')
+        try:
+            scores = cross_val_score(
+                [mat, rbf], 
+                braaks, 
+                mkl, 
+                LeaveOneOut(), 
+                random_state=42, 
+                scoring='accuracy'
+            )
+            df.at[i, 'mat_rbf_acc'] = np.mean(scores)
+            print(f'mat and rbf: {np.mean(scores):.4f}')
+        
+            scores = []
+            for train, test in LeaveOneOut().split(braaks):
+                svc = SVC(kernel='precomputed')
+                svc.fit(rbf[train][:, train], braaks[train])   
+                scores.append(svc.score(rbf[test][:, train], braaks[test]))
+            df.at[i, 'rbf_acc'] = np.mean(scores)
+            print(f'rbf {np.mean(scores)}')
+        
+            scores = []
+            for train, test in LeaveOneOut().split(braaks):
+                svc = SVC(kernel='precomputed')
+                svc.fit(mat[train][:, train], braaks[train])   
+                scores.append(svc.score(mat[test][:, train], braaks[test]))
+            df.at[i, 'mat_acc'] = np.mean(scores)
+            print(f'mat only {np.mean(scores)}')
+        except Exception:
+            print(f'{grid} Failed with {Exception}')
+            continue
 
     df.to_csv('hparam_search.csv')
             
