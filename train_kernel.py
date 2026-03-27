@@ -1,16 +1,22 @@
-import json
+import warnings
 import pandas as pd
 import numpy as np
 import networkx as nx
 from sklearn.neighbors import kneighbors_graph
+from sklearn.metrics.pairwise import rbf_kernel
 from pathlib import Path
 from gklearn.kernels import WeisfeilerLehman
 from sklearn.svm import SVC
 from itertools import combinations
 from sklearn.model_selection import ParameterGrid
+from MKLpy.algorithms import GRAM
+from MKLpy.preprocessing import kernel_centering
+from MKLpy.model_selection import cross_val_score
+from MKLpy.scheduler  import ReduceOnWorsening
+from sklearn.model_selection import LeaveOneOut
+from tqdm import tqdm
 
-
-BRAAK_TO_GROUP = {2: 0, 3: 0, 4: 1, 5: 2, 6: 2}
+BRAAK_TO_GROUP = {2: 0, 3: 0, 4: 0, 5: 1, 6: 1}
 
 
 def get_graphs_and_braaks(data_path: Path, n_neighbors: int):
@@ -61,61 +67,83 @@ def custom_train_test_split(x, folds=5):
     return train_sets, test_sets
     
 if __name__ == '__main__':
+    warnings.simplefilter('ignore', UserWarning)
+
 
     data_path = Path('data/braak_xy_expression_by_celltype_donor_lognorm')
     
-    grid = {
-        'n_neighbors': [1, 5, 10, 15, 20, 25, 30],
-        'height': [1, 5, 10, 15, 20],
+    params = {
+        'n_neighbors': [30, 15, 70],
+        'max_iter': [1000, 1500],
+        'lr': [0.01, 0.1, 0.001]
     }
     
-    df = pd.DataFrame(columns=['n_neighbors', 'height', 'avg. accuracy'])
+    demog = pd.read_csv('dummy_demog.csv', index_col=0)
+    df = pd.DataFrame(
+        columns=[
+            'n_neighbors', 
+            'max_iter', 
+            'lr',
+            'mat_rbf_acc',
+            'rbf_acc',
+            'mat_acc'
+        ]
+    )
     
-    for i, gr in enumerate(ParameterGrid(grid)):
-        
-        print(gr)
-        df.at[i, 'n_neighbors'] = gr['n_neighbors']
-        df.at[i, 'height'] = gr['height']
-        graphs, braaks, donor_list = get_graphs_and_braaks(data_path, gr['n_neighbors'])
+    rbf = rbf_kernel(demog.to_numpy())
+    rbf = kernel_centering(rbf)
+    
+    for i, grid in tqdm(enumerate(ParameterGrid(params)), total=len(ParameterGrid(params))):
+        print(grid)
+        df.at[i, 'n_neighbors'] = grid['n_neighbors']
+        df.at[i, 'max_iter'] = grid['max_iter']
+        df.at[i, 'lr'] = grid['lr']
+        graphs, braaks, donor_list = get_graphs_and_braaks(data_path, grid['n_neighbors'])
+        braaks = np.array(braaks)
         # Fitting kernel
         wl = WeisfeilerLehman(
-            height=gr['height'], 
+            height=5, 
             base_kernel='subtree',
-            normalize=True
+            normalize=False
         )
         mat, _ = wl.compute(graphs, verbose=True)
-        
-        train_idxs, test_idxs = custom_train_test_split(mat, 5)
-        
-        data_split = []
-        acc = []
-        for tr, ts in zip(train_idxs, test_idxs):
-            tr = list(tr)
-            ts = list(ts)
-            svm = SVC(kernel='precomputed', random_state=2026)
-            svm.fit(
-                mat[tr, :][:, tr], 
-                [braaks[idx] for idx in tr]
-            )
-            acc.append(
-                svm.score(
-                    mat[ts, :][:, tr], 
-                    [braaks[idx] for idx in ts]
-                )
-            )
-            data_split.append(
-                {
-                    'train': [donor_list[idx] for idx in tr],
-                    'test': [donor_list[idx] for idx in ts]
-                }
-            )
-        with open(f'folds.json', 'w') as f:
-            json.dump(
-                data_split,
-                f,
-                indent=4
-            )
-        df.at[i, 'avg. accuracy'] = np.mean(acc)
-        
-    df.to_csv('wl-kernel_cv_accuracy.csv')
+        mat = kernel_centering(mat)
+    
+        mkl = GRAM(
+            max_iter=grid['max_iter'],          
+            learning_rate=grid['lr'],      
+            scheduler=ReduceOnWorsening()
+        )
+    
+        scores = cross_val_score(
+            [mat, rbf], 
+            braaks, 
+            mkl, 
+            LeaveOneOut(), 
+            random_state=42, 
+            scoring='accuracy'
+        )
+        df.at[i, 'mat_rbf_acc'] = np.mean(scores)
+        print(f'mat and rbf: {np.mean(scores):.4f}')
+    
+        scores = []
+        for train, test in LeaveOneOut().split(braaks):
+            svc = SVC(kernel='precomputed')
+            svc.fit(rbf[train][:, train], braaks[train])   
+            scores.append(svc.score(rbf[test][:, train], braaks[test]))
+        df.at[i, 'rbf_acc'] = np.mean(scores)
+        print(f'rbf {np.mean(scores)}')
+    
+        scores = []
+        for train, test in LeaveOneOut().split(braaks):
+            svc = SVC(kernel='precomputed')
+            svc.fit(mat[train][:, train], braaks[train])   
+            scores.append(svc.score(mat[test][:, train], braaks[test]))
+        df.at[i, 'mat_acc'] = np.mean(scores)
+        print(f'mat only {np.mean(scores)}')
+
+    df.to_csv('hparam_search.csv')
             
+    
+    
+    
