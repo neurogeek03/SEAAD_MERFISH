@@ -111,4 +111,3 @@ for subclass in all_subclasses:
 counts_path = Path("data/section_counts.csv")
 counts_path.parent.mkdir(parents=True, exist_ok=True)
 pd.DataFrame(section_counts).to_csv(counts_path, index=False)
-print(f"\nSaved section counts to {counts_path}")
